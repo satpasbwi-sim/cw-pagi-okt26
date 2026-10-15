@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Absensi CW Pagi Okt'26 - Satlantas Polresta Banyuwangi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+    .st-H { background:#16a34a !important; color:#fff !important; border-color:#16a34a !important; }
+    .st-LD { background:#2563eb !important; color:#fff !important; border-color:#2563eb !important; }
+    .st-DL { background:#7c3aed !important; color:#fff !important; border-color:#7c3aed !important; }
+    .st-I { background:#d97706 !important; color:#fff !important; border-color:#d97706 !important; }
+    .st-S { background:#ea580c !important; color:#fff !important; border-color:#ea580c !important; }
+    .st-C { background:#0d9488 !important; color:#fff !important; border-color:#0d9488 !important; }
+    .st-TK { background:#dc2626 !important; color:#fff !important; border-color:#dc2626 !important; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+  <header class="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-lg sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-400 text-blue-950 flex items-center justify-center font-extrabold text-lg shadow">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <h1 class="text-sm md:text-base font-extrabold">ABSENSI PENGATURAN PAGI (CW PAGI)</h1>
+          <p class="text-[11px] text-blue-200">SATLANTAS POLRESTA BANYUWANGI • OKTOBER 2026</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="syncFromServer()" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate"></i> Sinkronkan Data
+        </button>
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto border-t border-white/10 text-xs font-bold">
+      <button onclick="openTab('absensi')" id="nav-absensi" class="px-4 py-2.5 border-b-2 border-amber-400 text-amber-300 whitespace-nowrap">1. Input Absensi</button>
+      <button onclick="openTab('laphar')" id="nav-laphar" class="px-4 py-2.5 border-b-2 border-transparent text-blue-200 whitespace-nowrap">2. Laporan Harian & WA</button>
+      <button onclick="openTab('catatan')" id="nav-catatan" class="px-4 py-2.5 border-b-2 border-transparent text-blue-200 whitespace-nowrap">3. Catatan / Pengganti</button>
+      <button onclick="openTab('rekap')" id="nav-rekap" class="px-4 py-2.5 border-b-2 border-transparent text-blue-200 whitespace-nowrap">4. Rekap Bulanan</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl w-full mx-auto px-4 py-5 flex-1 space-y-4">
+    <!-- TAB 1: ABSENSI -->
+    <section id="view-absensi" class="space-y-4">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tanggal Oktober 2026</label>
+          <select id="tglSelect" onchange="renderAll()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold"></select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Cari Nama / Simpul / Pos</label>
+          <input id="searchBox" oninput="renderAll()" placeholder="Ketik nama personel atau simpul..." class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </div>
+        <button onclick="markAllH()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl px-3 py-2 text-xs font-extrabold">
+          <i class="fa-solid fa-check-double mr-1"></i> Set Semua Hadir (H)
+        </button>
+        <button onclick="saveAbsensiToSheet()" class="bg-blue-700 hover:bg-blue-800 text-white rounded-xl px-4 py-2 text-xs font-extrabold shadow">
+          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Simpan ke Spreadsheet
+        </button>
+      </div>
+      <div id="statCards" class="grid grid-cols-4 md:grid-cols-7 gap-2"></div>
+      <div id="listPersonel" class="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100"></div>
+    </section>
+
+    <!-- TAB 2: LAPHAR -->
+    <section id="view-laphar" class="hidden bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-sm font-extrabold">Generator Laporan Harian WhatsApp (CW Pagi)</h2>
+        <button onclick="copyWA()" class="bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold"><i class="fa-brands fa-whatsapp mr-1"></i> Salin Teks WA</button>
+      </div>
+      <textarea id="waText" rows="12" readonly class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-mono"></textarea>
+    </section>
+
+    <!-- TAB 3: CATATAN -->
+    <section id="view-catatan" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2.5">
+        <h3 class="text-sm font-extrabold">Input Catatan / Pengganti Harian</h3>
+        <input type="date" id="cTgl" value="2026-10-15" class="w-full rounded-xl border px-3 py-2 text-xs font-bold" />
+        <select id="cPers" class="w-full rounded-xl border px-3 py-2 text-xs font-bold"></select>
+        <select id="cAlasan" class="w-full rounded-xl border px-3 py-2 text-xs font-bold">
+          <option value="LD">LD - Lepas Dinas</option>
+          <option value="DL">DL - Dinas Luar</option>
+          <option value="I">I - Izin</option>
+          <option value="S">S - Sakit</option>
+          <option value="C">C - Cuti</option>
+        </select>
+        <input id="cPengganti" placeholder="Nama Personel Pengganti..." class="w-full rounded-xl border px-3 py-2 text-xs" />
+        <input id="cKet" placeholder="Keterangan tambahan..." class="w-full rounded-xl border px-3 py-2 text-xs" />
+        <button onclick="submitCatatan()" class="w-full bg-blue-700 text-white rounded-xl py-2 text-xs font-extrabold">Simpan Catatan</button>
+      </div>
+      <div class="md:col-span-2 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-xs text-left"><thead class="bg-slate-100 font-bold"><tr><th class="p-2">Tanggal</th><th class="p-2">Personel</th><th class="p-2">Simpul</th><th class="p-2">Alasan</th><th class="p-2">Pengganti</th><th class="p-2">Ket</th></tr></thead><tbody id="cBody" class="divide-y"></tbody></table>
+      </div>
+    </section>
+
+    <!-- TAB 4: REKAP -->
+    <section id="view-rekap" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+      <table class="w-full text-xs text-left"><thead class="bg-slate-100 font-bold"><tr><th class="p-2">No</th><th class="p-2">Nama</th><th class="p-2">Simpul</th><th class="p-2 text-center">H</th><th class="p-2 text-center">LD</th><th class="p-2 text-center">DL</th><th class="p-2 text-center">I/S/C</th><th class="p-2 text-center">TK</th></tr></thead><tbody id="rBody" class="divide-y"></tbody></table>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbw206bvqt0laQGDN0jg_AJNmO4Zj_JZQ6PIMPHO5a97dFw3Y6Xf/exec";
+    let STATE = {"status":"success","updatedAt":"2026-10-15T08:13:56.606Z","personel":[{"id":1,"rowNumber":7,"nama":"Briptu Rizky Septian","pangkat":"Depan Polresta","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H","11":"LD"}},{"id":2,"rowNumber":8,"nama":"Briptu David Adzan","pangkat":"Depan Polresta","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":3,"rowNumber":9,"nama":"Aipda Bayu Aditya","pangkat":"Simp. 4 Mojopanggung","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":4,"rowNumber":10,"nama":"Brigpol Arisko Robi","pangkat":"Simp. 4 Mojopanggung","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":5,"rowNumber":11,"nama":"Aiptu Eko Supriyo","pangkat":"Simp. 4 Cungking","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":6,"rowNumber":12,"nama":"Aipda Kaspolin Dedi","pangkat":"Simp. 4 Cungking","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":7,"rowNumber":13,"nama":"Bripka Nanang Hidayat","pangkat":"Simp. 3 Bakungan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":8,"rowNumber":14,"nama":"Briptu Tri Setia Putra","pangkat":"Simp. 3 Bakungan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":9,"rowNumber":15,"nama":"Aipda Esti Galih","pangkat":"Depan SDK Santa Maria","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":10,"rowNumber":16,"nama":"Aipda Aji Bakhreisy","pangkat":"Depan SDK Santa Maria","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":11,"rowNumber":17,"nama":"2 Pers Laka","pangkat":"Simp. 4 Penataban","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":12,"rowNumber":18,"nama":"2 Pers Laka","pangkat":"Simp. 4 Bengawan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":13,"rowNumber":19,"nama":"1 Pers Pos 12.04 Karangente","pangkat":"Putar Balik SDN Pakis","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":14,"rowNumber":20,"nama":"1 Pers Pos 12.04 Karangente","pangkat":"Putar Balik Depan Auto 2000","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":15,"rowNumber":21,"nama":"Pos 12.04 Karangente","pangkat":"Simp. 4 Patung Kuda","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":16,"rowNumber":22,"nama":"Pos 12.02 Ketapang","pangkat":"Depan Kel Sobo","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":17,"rowNumber":23,"nama":"Aiptu Jatmiko Wahyudi","pangkat":"Simp. 4 Baluk","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":18,"rowNumber":24,"nama":"Briptu Dwiky Sadan","pangkat":"Simp. 4 Baluk","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":19,"rowNumber":25,"nama":"Aiptu Faisol Firdaus","pangkat":"Simp. 3 Kantor DPRD Bwi","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":20,"rowNumber":26,"nama":"Bripka Devris Hermawan","pangkat":"Simp. 3 Kantor DPRD Bwi","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":21,"rowNumber":27,"nama":"Aipda Fathan Ismail","pangkat":"Simp. 3 Borobudur","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":22,"rowNumber":28,"nama":"Brigpol M. Abdul Muzaki","pangkat":"Simp. 3 Borobudur","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":23,"rowNumber":29,"nama":"Bripda Natasya","pangkat":"Depan SMPN 1 Bwi","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":24,"rowNumber":30,"nama":"Bripda Syalsabela Wahyu","pangkat":"Depan SMPN 1 Bwi","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":25,"rowNumber":31,"nama":"Bripda Lail Julia","pangkat":"Depan SMPN 1 Bwi","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":26,"rowNumber":32,"nama":"Aipda Suratmin","pangkat":"Depan SDN 4 Penganjuran","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":27,"rowNumber":33,"nama":"Aipda Luly Giyanawati","pangkat":"Depan SDN 4 Penganjuran","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":28,"rowNumber":34,"nama":"Pos 12.04 Karangente","pangkat":"Simp. 4 Satelit","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":29,"rowNumber":35,"nama":"Patwal R4","pangkat":"Simp. 5 Bwi","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":30,"rowNumber":36,"nama":"Patwal R4","pangkat":"Simp. 4 MAB","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":31,"rowNumber":37,"nama":"Patwal R4","pangkat":"Simp. 4 Lateng","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":32,"rowNumber":38,"nama":"Pos 12.02 Ketapang","pangkat":"Pelabuhan ASDP Ketapang","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":33,"rowNumber":39,"nama":"Aiptu Siswo Prayitno","pangkat":"Simp. 4 BNI Kertosari","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":34,"rowNumber":40,"nama":"Aipda Ghoirul Anwar","pangkat":"Simp. 4 BNI Kertosari","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":35,"rowNumber":41,"nama":"Pos 12.02 Ketapang","pangkat":"Simp. 4 Hotel Slamet","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":36,"rowNumber":42,"nama":"Aipda Riduwan Hakim","pangkat":"Simp. 3 Naga Bulan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":37,"rowNumber":43,"nama":"Bripka Dimas Tri","pangkat":"Simp. 3 Naga Bulan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":38,"rowNumber":44,"nama":"Patwal R4","pangkat":"Simp. 4 Pegadaian","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":39,"rowNumber":45,"nama":"Aipda Nova Sila","pangkat":"Simp. 3 SDN Kepatihan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":40,"rowNumber":46,"nama":"Bripka Sri Hadi Utomo","pangkat":"Simp. 3 SDN Kepatihan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":41,"rowNumber":47,"nama":"Aiptu Andik Purwo","pangkat":"Simp. 3 Timur Stadion / Perpusda","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":42,"rowNumber":48,"nama":"Aipda Tedhy Andika","pangkat":"Simp. 3 Timur Stadion / Perpusda","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":43,"rowNumber":49,"nama":"Aiptu Bakhrul Ilmi","pangkat":"Simp. 3 Kejaksaan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":44,"rowNumber":50,"nama":"Brigpol Fahmi Arif","pangkat":"Simp. 3 Kejaksaan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":45,"rowNumber":51,"nama":"Aipda Hendy Indra","pangkat":"Simp. 4 Pecinan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H","11":"LD"}},{"id":46,"rowNumber":52,"nama":"Brigpol Fahmi Dwi A.","pangkat":"Simp. 4 Pecinan","unit":"Simpul Kota","simpul":"-","absensi":{"10":"H"}},{"id":47,"rowNumber":53,"nama":"Aipda Didit Cahyono","pangkat":"Simp. 3 Kantor Camat Cluring","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":48,"rowNumber":54,"nama":"Brigpol Yoga Presdian","pangkat":"Simp. 3 Kantor Camat Cluring","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":49,"rowNumber":55,"nama":"Aipda Hartanto","pangkat":"Simp. 3 Masjid Nurul Huda Tampo","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":50,"rowNumber":56,"nama":"Aipda Erwin Cahyo","pangkat":"Simp. 3 Masjid Nurul Huda Tampo","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":51,"rowNumber":57,"nama":"Bripka Ronny Agung","pangkat":"Simp. 3 Telkom Glenmore","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":52,"rowNumber":58,"nama":"Aipda Joko Prasetiyo","pangkat":"Simp. 3 Arah SMAN 1 Cluring","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":53,"rowNumber":59,"nama":"Aipda Eko Dedy","pangkat":"Simp. 3 Arah SMAN 1 Cluring","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":54,"rowNumber":60,"nama":"Aipda Syaiful Rizal","pangkat":"Simp. 3 Patung Minakjinggo Tamanagung","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":55,"rowNumber":61,"nama":"Briptu Axl Ereland","pangkat":"Simp. 3 Patung Minakjinggo Tamanagung","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":56,"rowNumber":62,"nama":"Aiptu Nurul Huda","pangkat":"Simp. 3 Benculuk (Lampu TL Benculuk)","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":57,"rowNumber":63,"nama":"Brigpol Aldino","pangkat":"Simp. 3 Benculuk (Lampu TL Benculuk)","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}},{"id":58,"rowNumber":64,"nama":"Brigpol Andre Oktavian","pangkat":"Depan Bank Jatim Genteng","unit":"Simpul Selatan","simpul":"-","absensi":{"10":"H"}}],"catatan":[{"tanggal":"1","nama":"10/10/2026","simpul":"15","alasan":"Pos 12.04 Karangente","pengganti":"Simp. 4 Patung Kuda","ket":"Piket Malam (Lepas Dinas) "},{"tanggal":"NO","nama":"TANGGAL","simpul":"NO PLOTTING","alasan":"PETUGAS (otomatis)","pengganti":"LOKASI (otomatis)","ket":"CATATAN / PENGGANTI"}]};
+    const STATUS_CODES = ['H','LD','DL','I','S','C','TK'];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const sel = document.getElementById('tglSelect');
+      const todayDate = new Date().getDate() || 15;
+      for (let d = 1; d <= 31; d++) {
+        const o = document.createElement('option');
+        o.value = d; o.textContent = d + ' Oktober 2026';
+        if (d === todayDate) o.selected = true;
+        sel.appendChild(o);
+      }
+      renderAll();
+      if (API_URL) syncFromServer();
+    });
+
+    function openTab(name) {
+      ['absensi','laphar','catatan','rekap'].forEach(t => {
+        document.getElementById('view-' + t).classList.add('hidden');
+        document.getElementById('nav-' + t).className = 'px-4 py-2.5 border-b-2 border-transparent text-blue-200 whitespace-nowrap';
+      });
+      document.getElementById('view-' + name).classList.remove('hidden');
+      document.getElementById('nav-' + name).className = 'px-4 py-2.5 border-b-2 border-amber-400 text-amber-300 whitespace-nowrap';
+    }
+
+    function renderAll() {
+      const tgl = parseInt(document.getElementById('tglSelect').value, 10);
+      const q = (document.getElementById('searchBox').value || '').toLowerCase();
+      const list = (STATE.personel || []).filter(p => p.nama.toLowerCase().includes(q) || p.simpul.toLowerCase().includes(q));
+
+      const counts = { H:0, LD:0, DL:0, I:0, S:0, C:0, TK:0 };
+      (STATE.personel || []).forEach(p => {
+        const st = (p.absensi && p.absensi[tgl]) ? p.absensi[tgl] : 'H';
+        if (counts[st] !== undefined) counts[st]++;
+      });
+
+      document.getElementById('statCards').innerHTML = STATUS_CODES.map(k =>
+        '<div class="bg-white p-2.5 rounded-xl border text-center"><div class="text-[10px] font-bold text-slate-400">' + k + '</div><div class="text-lg font-extrabold">' + counts[k] + '</div></div>'
+      ).join('');
+
+      document.getElementById('listPersonel').innerHTML = list.map(p => {
+        const cur = (p.absensi && p.absensi[tgl]) ? p.absensi[tgl] : 'H';
+        const btns = STATUS_CODES.map(code =>
+          '<button onclick="setSt(' + p.id + ',' + tgl + ',\'' + code + '\')" class="px-2.5 py-1 rounded-lg border text-xs font-extrabold ' + (cur === code ? 'st-' + code : 'bg-slate-50 text-slate-600') + '">' + code + '</button>'
+        ).join('');
+        return '<div class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2"><div><div class="font-bold text-sm">' + p.nama + '</div><div class="text-xs text-slate-500">' + p.pangkat + ' • <b class="text-slate-700">' + p.simpul + '</b></div></div><div class="flex gap-1 flex-wrap">' + btns + '</div></div>';
+      }).join('');
+
+      const total = (STATE.personel || []).length;
+      document.getElementById('waText').value =
+        'Kepada Yth.\nKasat Lantas Polresta Banyuwangi\n\nMohon izin melaporkan pelaksanaan Pengaturan Pagi (CW Pagi) pada:\nTanggal : ' + tgl + ' Oktober 2026\n\nKUAT PERSONEL :\n• Ploting : ' + total + ' pers\n• Hadir (H) : ' + counts.H + ' pers\n• Kurang : ' + (total - counts.H) + ' pers\n\nRINCIAN :\n- LD : ' + counts.LD + '\n- DL : ' + counts.DL + '\n- I/S/C : ' + (counts.I + counts.S + counts.C) + '\n- TK : ' + counts.TK + '\n\nSituasi lalin aman, tertib, dan lancar.';
+
+      document.getElementById('cPers').innerHTML = (STATE.personel || []).map(p => '<option value="' + p.nama + '|' + p.simpul + '">' + p.nama + ' (' + p.simpul + ')</option>').join('');
+      document.getElementById('cBody').innerHTML = (STATE.catatan || []).map(c => '<tr><td class="p-2">' + c.tanggal + '</td><td class="p-2 font-bold">' + c.nama + '</td><td class="p-2">' + c.simpul + '</td><td class="p-2">' + c.alasan + '</td><td class="p-2">' + c.pengganti + '</td><td class="p-2">' + c.ket + '</td></tr>').join('');
+
+      document.getElementById('rBody').innerHTML = (STATE.personel || []).map((p, i) => {
+        let h=0, ld=0, dl=0, isc=0, tk=0;
+        Object.values(p.absensi || {}).forEach(v => {
+          if (v==='H') h++; else if (v==='LD') ld++; else if (v==='DL') dl++; else if (v==='TK') tk++; else isc++;
+        });
+        return '<tr><td class="p-2">' + (i+1) + '</td><td class="p-2 font-bold">' + p.nama + '</td><td class="p-2">' + p.simpul + '</td><td class="p-2 text-center font-bold text-emerald-700">' + h + '</td><td class="p-2 text-center">' + ld + '</td><td class="p-2 text-center">' + dl + '</td><td class="p-2 text-center">' + isc + '</td><td class="p-2 text-center text-red-600">' + tk + '</td></tr>';
+      }).join('');
+    }
+
+    function setSt(id, tgl, st) {
+      const p = STATE.personel.find(x => x.id === id);
+      if (p) { if (!p.absensi) p.absensi = {}; p.absensi[tgl] = st; renderAll(); }
+    }
+
+    function markAllH() {
+      const tgl = parseInt(document.getElementById('tglSelect').value, 10);
+      (STATE.personel || []).forEach(p => { if (!p.absensi) p.absensi = {}; p.absensi[tgl] = 'H'; });
+      renderAll();
+    }
+
+    async function syncFromServer() {
+      if (!API_URL) return;
+      try {
+        const r = await fetch(API_URL + '?action=getAll');
+        const j = await r.json();
+        if (j.status === 'success') { STATE = j; renderAll(); }
+      } catch (e) { console.error(e); }
+    }
+
+    async function saveAbsensiToSheet() {
+      const tgl = parseInt(document.getElementById('tglSelect').value, 10);
+      const records = (STATE.personel || []).map(p => ({ rowNumber: p.rowNumber, status: (p.absensi && p.absensi[tgl]) ? p.absensi[tgl] : 'H' }));
+      if (!API_URL) { alert('Tersimpan di memori lokal'); return; }
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAbsensi', tanggal: tgl, records: records }) });
+      alert('Absensi tanggal ' + tgl + ' Oktober 2026 berhasil disimpan ke Google Spreadsheet!');
+    }
+
+    async function submitCatatan() {
+      const [nama, simpul] = document.getElementById('cPers').value.split('|');
+      const payload = {
+        tanggal: document.getElementById('cTgl').value,
+        nama: nama, simpul: simpul,
+        alasan: document.getElementById('cAlasan').value,
+        pengganti: document.getElementById('cPengganti').value,
+        ket: document.getElementById('cKet').value
+      };
+      STATE.catatan.unshift(payload);
+      renderAll();
+      if (API_URL) {
+        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveCatatan', payload: payload }) });
+        alert('Catatan berhasil disimpan ke Sheet CATATAN!');
+      }
+    }
+
+    function copyWA() {
+      navigator.clipboard.writeText(document.getElementById('waText').value);
+      alert('Format Laporan WA disalin!');
+    }
+  </script>
+</body>
+</html>
